@@ -1,0 +1,45 @@
+id: T-004
+title: "Gerador de placas sintéticas com referência"
+tier: standard
+depends_on: [T-001, T-002]
+goal: "Gerar placas pequenas e determinísticas (chain, star, random) com biblioteca de footprints SMD, layout inicial aleatório válido e layout de referência para a cadeia."
+memory_refs: [ADR-001, ADR-003, GLOSSARIO]
+files_allowed:
+  - engine/synth/__init__.py
+  - engine/synth/footprints.py
+  - engine/synth/generators.py
+  - tests/synth/__init__.py
+  - tests/synth/test_generators.py
+forbidden:
+  - engine/model/*
+  - engine/geometry/*
+  - engine/metrics/*
+  - tools/*
+signatures:
+  - "def footprint_library(rules: Rules) -> dict[str, Footprint]   # chaves: R0402, R0603, R0805, SOT23"
+  - "def default_rules() -> Rules"
+  - "def make_chain_board(n: int, seed: int, kinds: tuple[str, ...] = ('R0603',)) -> tuple[Board, Layout]"
+  - "def make_star_board(n_leaves: int, seed: int) -> tuple[Board, Layout]"
+  - "def make_random_board(n_components: int, n_nets: int, seed: int) -> tuple[Board, Layout]"
+  - "def reference_layout(board: Board) -> Layout   # só para chain: fila compactada"
+  - "def area_lower_bound(board: Board) -> int      # soma das áreas dos courtyards"
+spec:
+  - "Dimensões aproximadas (não precisam ser exatas, mas documente): R0402 pads 0,6x0,6 mm, centro a centro 1,0 mm; R0603 pads 0,8x0,9 mm, centro a centro 1,6 mm; R0805 pads 1,0x1,4 mm, centro a centro 1,9 mm; SOT23 três pads 0,8x1,0 mm em (-0,95,-1,0), (0,95,-1,0), (0,0,+1,0) mm. Courtyard = bounding box dos pads + courtyard_margin."
+  - "default_rules usa os valores do ADR-001 (A-001..A-005): clearance 0,2 mm; pad_via_gap 0,2 mm; furo 0,3 mm; via 0,6 mm; larguras 0,25 mm e 1,0 mm; margem 0,25 mm."
+  - "chain: componentes R1..Rn; o pad 2 de Ri liga ao pad 1 de Ri+1 pela net Ni; pad 1 de R1 na net IN e pad 2 de Rn na net OUT. Sem GND."
+  - "star: um SOT23 central U1 e n_leaves resistores; cada folha liga um pad a uma net própria do U1 e o outro pad ao GND (net_class gnd_plane). Se n_leaves > 3, os pads de U1 são reutilizados em ordem circular."
+  - "random: n_nets >= 1; cada net recebe de 2 a 4 pinos distintos, sorteados do conjunto de pads; todo pad usa no máximo uma net; sobras ficam sem net (permitido)."
+  - "Layout inicial: posições sorteadas dentro da region SEM sobreposição de courtyards (tentativa com limite, ValueError se não couber). Rotações sorteadas em 0/90/180/270."
+  - "setup: todos otimizáveis exceto nenhum locked por padrão; region = retângulo com área ~ 4x a soma dos courtyards, centrado na origem; hot_loop_nets = ()."
+  - "Determinismo: mesma (n, seed) gera Board e Layout IGUAIS (==). Seeds diferentes geram layouts diferentes."
+  - "Toda placa gerada passa em validate_board e validate_layout (sem mensagens) e não tem sobreposições (overlapping_pairs vazio) nem out_of_region."
+  - "reference_layout(chain): componentes em fila horizontal, courtyards encostados (sem sobrepor), rotação 0; netlist idêntica; a área do bounding box dos courtyards é >= area_lower_bound."
+acceptance_commands:
+  - pytest tests/synth -q
+acceptance_notes:
+  - "Toda aleatoriedade usa random.Random(seed); nenhuma chamada a random global."
+  - "Documentar no docstring do módulo as dimensões usadas."
+budget:
+  max_attempts: 2
+  max_minutes: 60
+  max_tokens: 35000

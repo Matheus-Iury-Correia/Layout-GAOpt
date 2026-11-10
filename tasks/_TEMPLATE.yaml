@@ -1,0 +1,30 @@
+# Contrato de tarefa. Formato restrito (parser simples em tools/_common.py):
+#  - chave: valor           (escalar em UMA linha)
+#  - chave: [a, b, c]       (lista em UMA linha) ou lista em bloco com "- item"
+#  - budget: com subchaves indentadas (max_attempts, max_minutes, max_tokens)
+#  - NÃO use YAML avançado (âncoras, multilinha ">" ou "|", listas aninhadas).
+#  - Evite o caractere # dentro de valores.
+id: T-000
+title: "Título curto"
+tier: simple                      # critical | standard | simple
+depends_on: []
+goal: "Uma frase dizendo o que fica pronto."
+memory_refs: [ADR-003, GLOSSARIO]
+files_allowed:
+  - engine/exemplo/arquivo.py
+  - tests/exemplo/test_arquivo.py
+forbidden:
+  - engine/model/*
+signatures:
+  - "def funcao(a: int) -> int"
+spec:
+  - "Regra de comportamento 1 (testável)."
+  - "Regra de comportamento 2."
+acceptance_commands:
+  - pytest tests/exemplo -q
+acceptance_notes:
+  - "Critério que não é comando (revisão humana/Revisor)."
+budget:
+  max_attempts: 2
+  max_minutes: 45
+  max_tokens: 20000

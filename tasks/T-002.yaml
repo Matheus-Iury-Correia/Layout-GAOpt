@@ -1,0 +1,48 @@
+id: T-002
+title: "Geometria: transformações, courtyard, pad_center e checagens"
+tier: critical
+depends_on: [T-001]
+goal: "Implementar rotação/translação exatas em inteiros, pad_center, component_courtyard e checagens de sobreposição/região/bloqueio."
+memory_refs: [ADR-001, ADR-003, GLOSSARIO]
+files_allowed:
+  - engine/geometry/__init__.py
+  - engine/geometry/transform.py
+  - engine/geometry/checks.py
+  - tests/geometry/__init__.py
+  - tests/geometry/test_transform.py
+  - tests/geometry/test_checks.py
+forbidden:
+  - engine/model/*
+  - engine/synth/*
+  - engine/metrics/*
+  - tools/*
+  - memory/adr/*
+signatures:
+  - "def rotate_point(p: Point, rotation: int) -> Point"
+  - "def rotate_rect(r: Rect, rotation: int) -> Rect"
+  - "def place_point(p: Point, placement: Placement) -> Point"
+  - "def place_rect(r: Rect, placement: Placement) -> Rect"
+  - "def pad_center(board: Board, layout: Layout, ref: str, pad: str) -> Point"
+  - "def pad_rect(board: Board, layout: Layout, ref: str, pad: str) -> Rect"
+  - "def component_courtyard(board: Board, layout: Layout, ref: str) -> Rect"
+  - "def overlapping_pairs(board: Board, layout: Layout) -> list[tuple[str, str]]"
+  - "def out_of_region(board: Board, layout: Layout) -> list[str]"
+  - "def in_blocked(board: Board, layout: Layout) -> list[str]"
+spec:
+  - "rotate_point: 0 -> identidade; 90 -> (x,y)->(-y,x); 180 -> (-x,-y); 270 -> (y,-x). Rotação em torno da origem, só inteiros."
+  - "rotate_rect: rotaciona os dois cantos e normaliza para x0<x1 e y0<y1."
+  - "place_* aplica rotate e depois soma (placement.x, placement.y)."
+  - "pad_rect usa pad.offset e pad.size (largura, altura); em rotação 90/270 largura e altura trocam. O retângulo é centrado em pad_center. Tamanhos ímpares: use divisão para baixo em x0/y0 e complete com size para x1/y1 de modo a SEMPRE ter largura exata == size."
+  - "overlapping_pairs usa courtyards; retângulos que só se tocam NÃO sobrepõem; pares em ordem lexicográfica (a<b), sem duplicatas, saída determinística."
+  - "out_of_region (courtyard não contido em setup.region) e in_blocked (courtyard intersecta algum setup.blocked) consideram TODOS os componentes, otimizáveis e locked, e devolvem refs ordenados."
+  - "Propriedade: rotate 4 vezes por 90 volta ao original; rotate(180) == rotate(90) aplicado duas vezes."
+  - "Sem float em nenhuma coordenada retornada."
+acceptance_commands:
+  - pytest tests/geometry -q
+acceptance_notes:
+  - "Revisor confere sinais da rotação e off-by-one de Rect (x1 exclusivo)."
+  - "Revisor confere o caso de pad com tamanho ímpar."
+budget:
+  max_attempts: 2
+  max_minutes: 60
+  max_tokens: 40000

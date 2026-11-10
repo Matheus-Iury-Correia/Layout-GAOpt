@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pcb-compactor"
+version = "0.0.1"
+description = "Reduz a área de PCBs com algoritmo genético (IA só no desenvolvimento)"
+requires-python = ">=3.10"
+dependencies = ["numpy"]
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff"]
+gui = ["PySide6"]
+ga = ["pymoo", "numba", "scipy"]
+
+[tool.setuptools.packages.find]
+include = ["engine*", "gui*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+extend-exclude = [".agent_state", "experiments"]
+
+[tool.ruff.lint]
+# Conjunto mínimo e estável: erros de sintaxe e pyflakes (imports/variáveis não usados).
+select = ["E9", "F"]

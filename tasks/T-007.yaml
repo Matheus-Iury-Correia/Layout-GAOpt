@@ -1,0 +1,35 @@
+id: T-007
+title: "Testes de propriedade e invariantes (harness)"
+tier: standard
+depends_on: [T-003, T-004, T-005]
+goal: "Harness de testes com sementes fixas que protege as invariantes I-1..I-8 do ADR-003 e garante determinismo do gerador."
+memory_refs: [ADR-003, GLOSSARIO]
+files_allowed:
+  - tests/properties/__init__.py
+  - tests/properties/test_invariants.py
+  - tests/properties/test_determinism.py
+  - tests/properties/helpers.py
+forbidden:
+  - engine/*
+  - gui/*
+  - tools/*
+signatures:
+  - "def random_valid_layout(board: Board, seed: int) -> Layout   # em tests/properties/helpers.py: perturba o layout dado mantendo-o válido"
+  - "def apply_random_ops(board: Board, layout: Layout, rng: random.Random, n: int) -> Layout   # sequência de movimentos/rotações permitidos"
+spec:
+  - "Sem dependência de hypothesis: usar laços com sementes fixas (por exemplo range(50))."
+  - "I-4: para 50 sementes, após apply_random_ops, netlist_hash(board) é igual ao inicial (a netlist vive no Board, que não muda; o teste garante que nenhuma operação do helper cria outro Board)."
+  - "I-6: operações aleatórias NUNCA alteram o Placement de refs em setup.locked (gere placas com 1 componente locked e verifique)."
+  - "I-7: após as operações, todos os componentes otimizáveis seguem dentro da região e fora de blocked (use out_of_region e in_blocked); o helper rejeita movimentos que violem."
+  - "I-8: dumps/loads é identidade para as placas geradas por make_chain_board, make_star_board e make_random_board (50 sementes)."
+  - "I-1/I-2: percorrer todos os campos de Board e Layout e afirmar que coordenadas são int e rotações estão em {0,90,180,270}."
+  - "Determinismo: mesma seed gera objetos iguais; seeds diferentes geram layouts diferentes em ao menos 90% dos casos."
+  - "Os testes devem rodar em menos de 20 segundos no total."
+acceptance_commands:
+  - pytest tests/properties -q
+acceptance_notes:
+  - "Se um teste revelar bug em T-001..T-005, NÃO corrija o motor aqui: escreva pedido de escalonamento ao Arquiteto com o caso mínimo."
+budget:
+  max_attempts: 2
+  max_minutes: 60
+  max_tokens: 30000

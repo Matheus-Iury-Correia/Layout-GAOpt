@@ -1,0 +1,1 @@
+"""Interface local (PySide6)."""

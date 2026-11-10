@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+
+# estado local dos agentes (breaker, última falha)
+.agent_state/
+
+# resultados de experimentos: ignorar execuções, manter golden
+experiments/*
+!experiments/.gitkeep
+!experiments/golden/

@@ -1,0 +1,7 @@
+#!/bin/sh
+# Ative com: git config core.hooksPath .githooks
+# Roda a verificação completa antes de qualquer push.
+python tools/verify.py || {
+  echo "pre-push: VERIFY falhou; push cancelado." >&2
+  exit 1
+}

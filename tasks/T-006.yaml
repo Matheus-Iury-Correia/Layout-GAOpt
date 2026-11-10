@@ -1,0 +1,35 @@
+id: T-006
+title: "Viewer local PySide6 (somente leitura)"
+tier: standard
+depends_on: [T-003]
+goal: "Janela local que carrega o JSON (Board+Layout) e desenha courtyards, pads, referências, região e componentes congelados, com zoom e pan."
+memory_refs: [ADR-001, ADR-003]
+files_allowed:
+  - gui/__init__.py
+  - gui/scene.py
+  - gui/viewer.py
+  - tests/gui/__init__.py
+  - tests/gui/test_scene.py
+forbidden:
+  - engine/*
+  - tools/*
+  - memory/adr/*
+signatures:
+  - "def build_scene(board: Board, layout: Layout) -> QGraphicsScene   # em gui/scene.py"
+  - "def main(argv: list[str] | None = None) -> int                    # em gui/viewer.py; uso: python -m gui.viewer arquivo.json"
+spec:
+  - "Dependência permitida: PySide6 (extra opcional gui do pyproject). Testes usam pytest.importorskip('PySide6') e QT_QPA_PLATFORM=offscreen."
+  - "Coordenadas: converter nm para unidades de cena com 1 unidade = 1 micrômetro (nm / 1000, float só na renderização). Eixo Y da cena invertido para refletir Y para cima."
+  - "Desenhar: região (contorno tracejado), courtyard de cada componente (cinza claro; azul se otimizável; laranja se locked), pads (cobre), ref como texto, trilhas e vias se existirem (cores por camada)."
+  - "Interação mínima: zoom com roda do mouse, pan arrastando, botão Ajustar à janela, caixas para ligar/desligar courtyards, pads, trilhas e rótulos."
+  - "build_scene não depende de QApplication visível; o teste cria a cena e conta itens por tipo (ex.: n retângulos de courtyard == n componentes)."
+  - "Sem rede, sem web. Sem threads nesta tarefa."
+acceptance_commands:
+  - pytest tests/gui -q
+acceptance_notes:
+  - "Se PySide6 não estiver instalado o teste é pulado (skip), e isso NÃO é falha, mas o Revisor deve rodar localmente com o extra gui."
+  - "Humano abre o viewer com uma placa de T-004 e valida o visual."
+budget:
+  max_attempts: 2
+  max_minutes: 60
+  max_tokens: 30000

@@ -1,0 +1,49 @@
+id: T-001
+title: "Modelo canônico (dataclasses) e validação"
+tier: critical
+depends_on: []
+goal: "Implementar as entidades do ADR-003, helpers de unidade, netlist_hash e validate_board/validate_layout, com testes."
+memory_refs: [ADR-001, ADR-003, GLOSSARIO]
+files_allowed:
+  - engine/__init__.py
+  - engine/model/__init__.py
+  - engine/model/units.py
+  - engine/model/entities.py
+  - engine/model/validate.py
+  - tests/model/__init__.py
+  - tests/model/test_entities.py
+  - tests/model/test_validate.py
+forbidden:
+  - engine/geometry/*
+  - engine/synth/*
+  - engine/metrics/*
+  - tools/*
+  - memory/adr/*
+signatures:
+  - "def mm(value: float) -> int"
+  - "def to_mm(value_nm: int) -> float"
+  - "@dataclass(frozen=True) class Point: x: int; y: int"
+  - "@dataclass(frozen=True) class Rect: x0: int; y0: int; x1: int; y1: int   # propriedades width, height, area; métodos intersects(other), union(other), contains(other)"
+  - "@dataclass(frozen=True) class Pad / Footprint / Component / Net / PinRef / Rules / OptimizationSetup / Board / Placement / Track / Via / Layout   # campos exatamente como no ADR-003"
+  - "def netlist_hash(board: Board) -> str"
+  - "def validate_board(board: Board) -> list[str]"
+  - "def validate_layout(board: Board, layout: Layout) -> list[str]"
+spec:
+  - "mm(0.2) == 200000 (arredonda com round, retorna int). to_mm inverte."
+  - "Rect valida x0<x1 e y0<y1 no __post_init__ (ValueError). intersects trata bordas que apenas se tocam como NAO sobrepostas (x1 e y1 exclusivos)."
+  - "Todas as dataclasses são frozen. Campos de coordenada/dimensão devem ser int; rejeitar float com TypeError no __post_init__ (invariante I-1)."
+  - "Placement.rotation só aceita 0, 90, 180, 270 (ValueError caso contrário, I-2)."
+  - "netlist_hash segue exatamente a definição do ADR-003 e não depende da ordem de declaração das nets/pinos."
+  - "validate_board retorna mensagens para: PinRef inexistente, pad em duas nets, ref duplicado, net duplicada, locked interseção optimizable, hot_loop_nets inexistentes (I-3 e consistência do setup)."
+  - "validate_layout retorna mensagens para: componente do Board sem Placement, Placement de ref inexistente, track/via com net inexistente (I-5). A garantia de locked imutável (I-6) é testada em T-007, não aqui."
+  - "validate_layout NÃO verifica geometria (courtyard em region, sobreposição); isso é T-002."
+  - "Sem import de numpy neste módulo. Só biblioteca padrão."
+acceptance_commands:
+  - pytest tests/model -q
+acceptance_notes:
+  - "Revisor confere I-1, I-2, I-3, I-5 e a semântica x1/y1 exclusivos."
+  - "Humano aprova qualquer mudança em nomes de campo (interface pública)."
+budget:
+  max_attempts: 2
+  max_minutes: 60
+  max_tokens: 40000

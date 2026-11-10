@@ -1,0 +1,39 @@
+id: T-005
+title: "Métricas proxy (área, HPWL, sobreposição, hot loop)"
+tier: standard
+depends_on: [T-001, T-002]
+goal: "Calcular métricas rápidas e determinísticas de um Layout, usadas como proxy no GA."
+memory_refs: [ADR-003, GLOSSARIO]
+files_allowed:
+  - engine/metrics/__init__.py
+  - engine/metrics/proxy.py
+  - tests/metrics/__init__.py
+  - tests/metrics/test_proxy.py
+forbidden:
+  - engine/model/*
+  - engine/geometry/*
+  - engine/synth/*
+  - tools/*
+signatures:
+  - "def bbox_area(board: Board, layout: Layout) -> int"
+  - "def hpwl(board: Board, layout: Layout) -> int"
+  - "def overlap_count(board: Board, layout: Layout) -> int"
+  - "def overlap_area(board: Board, layout: Layout) -> int"
+  - "def hot_loop_proxy(board: Board, layout: Layout) -> int"
+  - "def proxy_metrics(board: Board, layout: Layout) -> dict[str, int]   # chaves: area, hpwl, overlap_count, overlap_area, hot_loop"
+spec:
+  - "bbox_area: área do retângulo que envolve todos os courtyards (via component_courtyard de engine.geometry.transform)."
+  - "hpwl: soma sobre nets com net_class diferente de gnd_plane do semiperímetro (largura+altura) do retângulo de pad_center de seus pinos; net com menos de 2 pinos contribui 0."
+  - "overlap_count: número de pares de courtyards sobrepostos (use overlapping_pairs). overlap_area: soma das áreas das interseções."
+  - "hot_loop_proxy: área do retângulo que envolve os pad_center de todos os pinos das nets em setup.hot_loop_nets; 0 se a lista for vazia ou houver menos de 2 pinos distintos."
+  - "Todos os valores são int. Se a área for ponderada por unidade, mantenha nm (nm^2 para áreas, nm para comprimentos)."
+  - "Propriedades que os testes devem verificar (metamórficas): (a) transladar TODOS os componentes pelo mesmo vetor não muda nenhuma métrica; (b) rotacionar TODO o conjunto por 90 em torno da origem (posições e rotações) não muda hpwl, overlap_count nem bbox_area; (c) afastar dois componentes sobrepostos até se tocarem zera a sobreposição entre eles."
+  - "Casos manuais: placa de 2 resistores R0603 com valores esperados calculados à mão no teste."
+acceptance_commands:
+  - pytest tests/metrics -q
+acceptance_notes:
+  - "Depende de T-001 e T-002 já mescladas em develop; não reimplemente geometria."
+budget:
+  max_attempts: 2
+  max_minutes: 45
+  max_tokens: 25000

@@ -1,0 +1,38 @@
+id: T-003
+title: "Serialização JSON (round-trip exato)"
+tier: simple
+depends_on: [T-001]
+goal: "Implementar to_json/from_json para Board e Layout com formato estável e round-trip exato (invariante I-8)."
+memory_refs: [ADR-003]
+files_allowed:
+  - engine/io/__init__.py
+  - engine/io/jsonio.py
+  - tests/io/__init__.py
+  - tests/io/test_jsonio.py
+forbidden:
+  - engine/model/*
+  - engine/geometry/*
+  - engine/synth/*
+  - engine/metrics/*
+  - tools/*
+signatures:
+  - "def dumps(board: Board, layout: Layout) -> str"
+  - "def loads(text: str) -> tuple[Board, Layout]"
+  - "def save(path: str, board: Board, layout: Layout) -> None"
+  - "def load(path: str) -> tuple[Board, Layout]"
+spec:
+  - "Formato: objeto JSON com chaves format (valor pcbc-1), board e layout. Chaves ordenadas (sort_keys), indent=2, ensure_ascii=False, quebra de linha final."
+  - "Sem float: todos os números são int. Ao ler, converter explicitamente; rejeitar float no JSON com ValueError."
+  - "loads rejeita format diferente de pcbc-1 com ValueError claro."
+  - "Tuplas e frozensets: serializar frozenset como lista ORDENADA; reconstruir os tipos corretos na leitura."
+  - "Round-trip: loads(dumps(b, l)) == (b, l) para uma placa construída à mão no teste (3 componentes, 2 nets, 1 via, 2 trilhas)."
+  - "dumps é determinístico: mesma entrada, mesma string, byte a byte."
+  - "Use só biblioteca padrão (json, pathlib). Não crie classes novas no modelo."
+acceptance_commands:
+  - pytest tests/io -q
+acceptance_notes:
+  - "A placa de teste deve ser construída diretamente com as dataclasses do ADR-003, sem usar o gerador (T-004)."
+budget:
+  max_attempts: 2
+  max_minutes: 40
+  max_tokens: 20000
